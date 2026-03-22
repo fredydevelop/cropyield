@@ -41,7 +41,7 @@ data_header_names = [
 
 st.set_page_config(page_title='Crop Yield Prediction System', layout='centered')
 
-st.image('logo.jpg', width=120, caption='AgroRegressor')
+st.image('logo.jpeg', width=120, caption='AgroRegressor')
 selection = option_menu(
     menu_title=None,
     options=["Single Prediction", "Multi Prediction"],
