@@ -44,7 +44,7 @@ st.set_page_config(page_title='Crop Yield Prediction System', layout='centered')
 st.image('logo.jpeg', width=120)
 st.header ("AgroRegressor")
 st.markdown(
-    "### Crop Yield Prediction System for *Cotton*, *Rice*, *Barley*, *Soybean*, *Wheat*, *Maize*"
+    "Crop Yield Prediction System for *Cotton*, *Rice*, *Barley*, *Soybean*, *Wheat*, *Maize*"
 )
 selection = option_menu(
     menu_title=None,
@@ -64,8 +64,8 @@ def filedownload(df):
 
 
 def cropYield(givendata):
-    loaded_model = pk.load(open("The_Latest_cropYield_Model.sav", "rb"))
-    std_scaler_loaded = pk.load(open("my_saved_std_scaler.pkl", "rb"))
+    loaded_model = pk.load(open("crop_yield_model.pkl", "rb"))
+    std_scaler_loaded = pk.load(open("crop_yield_scaler.pkl", "rb"))
 
     input_data_as_numpy_array = np.asarray(givendata, dtype=float)
     input_data_reshaped = input_data_as_numpy_array.reshape(1, -1)
