@@ -41,7 +41,8 @@ data_header_names = [
 
 st.set_page_config(page_title='Crop Yield Prediction System', layout='centered')
 
-st.image('logo.jpeg', width=120, caption='AgroRegressor')
+st.image('logo.jpeg', width=120)
+st.header (""AgroRegressor)
 selection = option_menu(
     menu_title=None,
     options=["Single Prediction", "Multi Prediction"],
@@ -272,16 +273,13 @@ def multi(input_data):
     # Load saved objects
     loaded_model = pk.load(open("crop_yield_model.pkl", "rb"))
     std_scaler_loaded = pk.load(open("crop_yield_scaler.pkl", "rb"))
-    loaded_encoder = pk.load(open("crop_yield_encoder.pkl", "rb"))  # you must save this during training
+    loaded_encoder = pk.load(open("crop_yield_encoder.pkl", "rb"))
 
     # Read uploaded CSV
     dfinput = pd.read_csv(input_data)
 
-    st.header("A view of the uploaded dataset")
-    st.dataframe(dfinput)
-
-    # Required raw input columns
-    required_columns = [
+    # Raw input columns
+    required_raw_columns = [
         "Rainfall_mm",
         "Temperature_Celsius",
         "Fertilizer_Used",
@@ -293,31 +291,7 @@ def multi(input_data):
         "Weather_Condition"
     ]
 
-    missing_cols = [col for col in required_columns if col not in dfinput.columns]
-
-    if missing_cols:
-        st.error(f"Missing required columns: {missing_cols}")
-        return
-
-    # Separate categorical and numerical columns
-    categorical_columns = ["Region", "Soil_Type", "Crop", "Weather_Condition"]
-    numerical_columns = [
-        "Rainfall_mm",
-        "Temperature_Celsius",
-        "Fertilizer_Used",
-        "Irrigation_Used",
-        "Days_to_Harvest"
-    ]
-
-    # Encode categoricals
-    encoded_array = loaded_encoder.transform(dfinput[categorical_columns])
-    encoded_feature_names = loaded_encoder.get_feature_names_out(categorical_columns)
-    encoded_df = pd.DataFrame(encoded_array, columns=encoded_feature_names, index=dfinput.index)
-
-    # Combine with numerical columns
-    final_df = pd.concat([dfinput[numerical_columns], encoded_df], axis=1)
-
-    # Reorder columns to exactly match training order
+    # Encoded model columns
     data_header_names = [
         'Rainfall_mm', 'Temperature_Celsius', 'Fertilizer_Used',
         'Irrigation_Used', 'Days_to_Harvest', 'Region_East', 'Region_North',
@@ -329,27 +303,63 @@ def multi(input_data):
         'Weather_Condition_Sunny'
     ]
 
-    # Add any missing encoded columns as 0
-    for col in data_header_names:
-        if col not in final_df.columns:
-            final_df[col] = 0
-
-    final_df = final_df[data_header_names]
-
-    # Scale
-    std_dfinput = std_scaler_loaded.transform(final_df)
+    raw_mode = all(col in dfinput.columns for col in required_raw_columns)
+    encoded_mode = all(col in dfinput.columns for col in data_header_names)
 
     if st.button("Predict"):
+        # CASE 1: RAW DATASET
+        if raw_mode:
+            st.header("A view of the uploaded dataset")
+            st.dataframe(dfinput)
+
+            categorical_columns = ["Region", "Soil_Type", "Crop", "Weather_Condition"]
+            numerical_columns = [
+                "Rainfall_mm",
+                "Temperature_Celsius",
+                "Fertilizer_Used",
+                "Irrigation_Used",
+                "Days_to_Harvest"
+            ]
+
+            encoded_array = loaded_encoder.transform(dfinput[categorical_columns])
+            encoded_feature_names = loaded_encoder.get_feature_names_out(categorical_columns)
+            encoded_df = pd.DataFrame(encoded_array, columns=encoded_feature_names, index=dfinput.index)
+
+            final_df = pd.concat([dfinput[numerical_columns], encoded_df], axis=1)
+
+            for col in data_header_names:
+                if col not in final_df.columns:
+                    final_df[col] = 0
+
+            final_df = final_df[data_header_names]
+
+            st.subheader("Encoded dataset")
+            st.dataframe(final_df)
+
+        # CASE 2: ALREADY ENCODED DATASET
+        elif encoded_mode:
+            final_df = dfinput.copy()
+            final_df = final_df[data_header_names]
+
+        else:
+            st.error("The uploaded file is neither a valid raw dataset nor a valid encoded dataset.")
+            return
+
+        # Scale
+        std_dfinput = std_scaler_loaded.transform(final_df)
+
+        # Predict
         prediction = loaded_model.predict(std_dfinput)
 
-        result_df = dfinput.copy()
-        result_df["Predicted_Crop_Yield"] = prediction
+        result_df = pd.DataFrame({
+            "Record_ID": np.arange(1, len(prediction) + 1),
+            "Predicted_Crop_Yield": prediction
+        })
 
-        st.subheader("Here is your prediction")
+        st.subheader("Prediction result")
         st.dataframe(result_df)
 
         st.markdown(filedownload(result_df), unsafe_allow_html=True)
-
 
 if selection =="Single Prediction":
     main()
