@@ -43,6 +43,9 @@ st.set_page_config(page_title='Crop Yield Prediction System', layout='centered')
 
 st.image('logo.jpeg', width=120)
 st.header ("AgroRegressor")
+st.markdown(
+    "### Crop Yield Prediction System for *Cotton*, *Rice*, *Barley*, *Soybean*, *Wheat*, *Maize*"
+)
 selection = option_menu(
     menu_title=None,
     options=["Single Prediction", "Multi Prediction"],
@@ -76,7 +79,7 @@ def cropYield(givendata):
 
 
 def main():
-    st.header("Agricultural Crop Yield Prediction System")
+#    st.header("Agricultural Crop Yield Prediction System")
 
     Rainfall_mm = st.number_input(
         "Rainfall (mm)",
